@@ -1,13 +1,19 @@
 /**
- * This script itterates across objects containing selectors and respective fixes for
- * said selectors. It has support for individual URIs for page-specific fixes, site-wide
+ * This script iterates across objects containing selectors and respective fixes for
+ * said selectors. It has support for individual URIs for page-specific fixes, directory-wide
  * fixes, and universal fixes (fixes regardless of URI).
  * 
- * @author Sina Bahram (sina@sinabahram.com) and Greg Kraus (Greg Kraus <gdkraus@ncsu.edu>)
+ * @author Sina Bahram (sina@sinabahram.com) and Greg Kraus (Greg Kraus <gregorydkraus@gmail.com>)
  */
 
 /**
- * Dependencies: jQuery must already be loaded
+ * Dependencies: none
+ */
+
+/**
+ * jQuery Note: Functions in a11yfixer.js should refer to the jQuery object using jQueryA11y. This ensures
+ * that if jQuery is already loaded on the page, the version of jQuery that a11yfixer.js uses will
+ * not conflict with the already installed jQuery.
  */
 
 /**
@@ -16,14 +22,19 @@
  * but run seamlessly on other servers like development, staging, testing, etc.
  * 'development server': 'production server',
  *
- * '*' = fixes which apply to any page, regardless of URI
+ * 'universal' = fixes which apply to any page, regardless of URI
  * 
- * 'domain.com' = fixes which apply to a whole domain
+ * 'wildcard' = fixes which apply to a whole folder
  * 
- * 'domain.com/content' = fixes which apply to a specific page
+ * 'specific' = fixes which apply to a specific page
  *
  * 'selector' = jQuery formatted selector string. Not a jQuery object, simply the
  * selector string. For example "h1" is correct. "jQuery('h1')" is not correct.
+ *
+ * 'description' = A brief description of the modification. This description will be printed to the console and error messages
+ *
+ * 'status' = This should be set to 'false' if you want the modification to run. The script uses this variable
+ * to track if a modification has successfully run. Manualy setting it to 'true' will disable the modification.
  *
  * 'action' = function which transforms the results returned by the jQuery selector
  * string. This function should return true or false depending on if it ran successfully.
@@ -42,94 +53,151 @@ var fixesForPages = {
         'testing.a.com': 'a.com',
         'staging.a.com': 'a.com'
     },
-    '*': [
-        {
-            'selector': 'body',
-            'action': function (selectorObj) {
-                selectorObj.prepend('<p>This will be written to every page, regardless of URI.</p>');
-                return true; // return true if the fix succeeds
+    'universal' :{
+        '*': [
+            {
+                'selector': 'body',
+                'description' : 'Adds text to every page on the Web',
+                'status': false,
+                'action': function (selectorObj) {
+                    selectorObj.prepend('<p>This gets inserted on every single page, complements of the accessibility fairy.</p>');
+                    return true; // return true if the fix succeeds
+                }
             }
-        }
-    ],
-    'a.com': [
-        {
-            'selector': 'img#logo',
-            'action': function (selectorObj) {
-                selectorObj.attr('alt', 'Acme Inc.');
-                return true;
+        ],
+    },
+    'wildcard' :{
+        'a.com': [
+            {
+                'selector': 'body',
+                'description' : 'Adds text to every page in the site',
+                'status': false,
+                'action': function (selectorObj) {
+                    selectorObj.prepend('<p>This gets added to every page within the accessibility.tools domain, complements of the accessibility fairy.</p>');
+                    return true; // return true if the fix succeeds
+                }
             }
-        }
-    ],
-    'a.com/content': [
-        {
-            'selector': 'img#banner',
-            'action': function (selectorObj) {
-                selectorObj.attr('alt', 'co-workers discussing around a table');
-                return true;
+        ],
+        'a.com/demos/': [
+            {
+                'selector': 'body',
+                'description' : 'Adds text to anything in demos directory',
+                'status': false,
+                'action': function (selectorObj) {
+                    selectorObj.prepend('<p>Limited scope</p>');
+                    return true; // return true if the fix succeeds
+                }
             }
-        },
-        {
-            'selector': 'div#clickableHeading',
-            'action': function (selectorObj) {
-                selectorObj.attr('tabindex', '0');
-                return true;
+        ],
+    },
+    'specific' :{
+        'a.com/page.html': [
+            {
+                'selector': 'h2',
+                'description' : 'Modifies the heading',
+                'status': false,
+                'action': function (selectorObj) {
+                    selectorObj.html(selector.html() + '... accessibility fairy dust in your heading');
+                    return true;
+                }
+            },
+            {
+                'selector': 'img',
+                'description' : 'Changes the alt text',
+                'status': false,
+                'action': function (selectorObj) {
+                    selectorObj.attr('alt', 'The accessibility fairy has taken over your alt text.');
+                    return true;
+                }
             }
-        }
-
-    ]
+        ]
+    }
 };
  
- */
+*/
 
-var jQueryRan = false;
-var jQueryRunAttempts = 0;
 
 /**
  * JSON of fixes
  */
-var fixesForPages = {
+ var fixesForPages = {
     'development': {
-        'dev.a.com': 'a.com'
+        'qa.accessibility.tools': 'accessibility.tools',
+        'testing.accessibility.tools': 'accessibility.tools',
+        'dev.accessibility.tools': 'accessibility.tools'
     },
-    '*': [
+    'universal' :{
+        '*': [
         {
             'selector': 'body',
+            'description' : 'Adds text to every page on the Web',
+            'status': false,
             'action': function (selectorObj) {
                 selectorObj.prepend('<p>This gets inserted on every single page, complements of the accessibility fairy.</p>');
-                return true; // return true if the fix succeeds
+                    return true; // return true if the fix succeeds
+                }
             }
-        }
-    ],
-    'a.com': [
-        {
-            'selector': 'body',
-            'action': function (selectorObj) {
-                selectorObj.prepend('<p>This gets added to every page within the accessibility.oit.ncsu.edu domain, complements of the accessibility fairy.</p>');
-                return true; // return true if the fix succeeds
-            }
-        }
-    ],
-    'a.com/about.html': [
-        {
-            'selector': 'h2',
-            'action': function (selectorObj) {
-                selectorObj.html(selector.html() + '... accessibility fairy dust in your heading');
-                return true;
-            }
+            ],
         },
-        {
-            'selector': 'img',
-            'action': function (selectorObj) {
-                selectorObj.attr('alt', 'The accessibility fairy has taken over your alt text.');
-                return true;
+        'wildcard' :{
+            'accessibility.tools': [
+            {
+                'selector': 'body',
+                'description' : 'Adds text to every page in the site',
+                'status': false,
+                'action': function (selectorObj) {
+                    selectorObj.prepend('<p>This gets added to every page within the accessibility.tools domain, complements of the accessibility fairy.</p>');
+                    return true; // return true if the fix succeeds
+                }
             }
+            ],
+            'accessibility.tools/demos/': [
+            {
+                'selector': 'body',
+                'description' : 'Adds text to anything in demos directory',
+                'status': false,
+                'action': function (selectorObj) {
+                    selectorObj.prepend('<p>Limited scope</p>');
+                    return true; // return true if the fix succeeds
+                }
+            }
+            ],
+        },
+        'specific' :{
+            'accessibility.tools/accessibleu.html': [
+            {
+                'selector': 'h2',
+                'description' : 'Modifies the heading',
+                'status': false,
+                'action': function (selectorObj) {
+                    selectorObj.html(selector.html() + '... accessibility fairy dust in your heading');
+                    return true;
+                }
+            },
+            {
+                'selector': 'img',
+                'description' : 'Changes the alt text',
+                'status': false,
+                'action': function (selectorObj) {
+                    selectorObj.attr('alt', 'The accessibility fairy has taken over your alt text.');
+                    return true;
+                }
+            }
+            ]
         }
-    ]
-};
+    };
 
-// get the current URL
-var host = window.location.host; // extract the domain
-var page = window.location.href.toString().split(host)[1]; // extract the part after the first slash
+
+/**
+ * Second Attempt
+ * Set secondAttempt to 'true' if you want to attempt to apply the changes a second time. It will only 
+ * attempt to reaply the patch if the first attempt failed. This is useful if there will be asynchronous
+ * chnages to the page that will also need modifications.
+ *
+ * Set the TIMEOUT_RETRY to the delay in miliseconds before the second attempt is made.
+ */
+ var secondAttempt = false;
+var TIMEOUT_RETRY = 5000; // time in milliseconds to reattempt the changes
 
 /**
  * DEBUG Mode
@@ -149,43 +217,47 @@ var page = window.location.href.toString().split(host)[1]; // extract the part a
  * server is being used
  */
 
+// get the current URL
+var host = window.location.host; // extract the domain
+var page = window.location.href.toString().split(host)[1]; // extract the part after the first slash
+
 /**
  * CONSTANTS
  */
-var DEBUG_DEFAULT = 0;
-var DEBUG_FORCE_OFF = 1;
-var DEBUG_FORCE_ON = 2;
+ var DEBUG_DEFAULT = 0;
+ var DEBUG_FORCE_OFF = 1;
+ var DEBUG_FORCE_ON = 2;
 
 // Edit this line to change the DEBUG mode
 var DEBUG_MODE = DEBUG_DEFAULT;
 
 var ALERTS = false;
 switch (DEBUG_MODE) {
-case DEBUG_DEFAULT:
+    case DEBUG_DEFAULT:
     // check if running in a development environment. If so, enable DEBUG_MODE
     var devSite = fixesForPages.development[host];
     if (typeof devSite !== 'undefined') {
         // running in development mode
         ALERTS = true;
         host = devSite;
-        console.log("Running in debug mode as development site for '" + devSite + "'");
+        writeToConsole("Running in debug mode as development site for '" + devSite + "'");
     } else {
         // running on production site
         ALERTS = false;
     }
     break;
 
-case DEBUG_FORCE_OFF:
+    case DEBUG_FORCE_OFF:
     ALERTS = false;
-    console.log("debug forced off");
+    writeToConsole("debug forced off");
     break;
 
-case DEBUG_FORCE_ON:
+    case DEBUG_FORCE_ON:
     ALERTS = true;
-    console.log("debug forced on");
+    writeToConsole("debug forced on");
     break;
 
-default:
+    default:
     ALERTS = false;
     break;
 }
@@ -196,11 +268,18 @@ default:
  * 2. domain-wide rule
  * 3. page specific rules
  */
-function a11yFixer(json) {
+ function a11yFixer(json) {
 
-    iterateFixes(json, '*'); // apply 'run always' changes
-    iterateFixes(json, host); // apply domain-wide changes
-    iterateFixes(json, host + page); // apply page specific changes
+    iterateFixes(json['universal'], '*', false); // apply 'run always' changes
+    iterateFixes(json['wildcard'], host + page, true); // apply domain-wide changes
+    iterateFixes(json['specific'], host + page, false); // apply page specific changes
+
+    // Make a second pass at attempting the fixes after a given time frame. This allows for
+    // asynchronous calls to finish firing before attempting again.
+    if (secondAttempt){
+        secondAttempt = false;
+        setTimeout(run, TIMEOUT_RETRY);
+    }
 
 }
 
@@ -209,16 +288,20 @@ function a11yFixer(json) {
  * an empty set, indicating a selector could not find its target, an error message
  * is generated.
  */
-function iterateFixes(json, scope) {
+ function iterateFixes(json, scope, wildcard) {
     // grab all of the fixes based on the scope (URI)
-    var fixes = json[scope];
+    if(wildcard) {
+        var fixes = findPages(json, scope);
+    } else {
+        var fixes = json[scope];
+    }
     // if fixes exist for a page
     if (typeof fixes !== 'undefined') {
         // iterate over the fixes
         for (var i = 0; i < fixes.length; i++) {
             var f = fixes[i];
-            //try {
-                var selector = $(f.selector);
+            if(!f.status) { 
+                var selector = jQueryA11Y(f.selector);
                 // if selector returns a set of matched elements
                 if (selector.length != 0) {
                     // success
@@ -228,18 +311,36 @@ function iterateFixes(json, scope) {
                         error(scope, f, i);
                     } else {
                         // success
-                        jQueryRan = true;
+                        f.status = true; // mark that the action executed
                         if (ALERTS) {
-                            console.log('SUCCESS: Fix number ' + parseInt(i + 1) + ' for page "' + scope + '" (Selector: "' + f.selector + '")');
+                            writeToConsole('SUCCESS: Fix for page "' + scope + '" (Task: "' + f.description + '")');
                         }
                     }
                 } else {
                     // failure - jQuery selector failed
                     error(scope, f, i);
                 }
+            }
         }
     }
 }
+
+function findPages(json, url) {
+    var fixes = [];
+    var i = 0;
+    for (var j in json) {
+        if(json.hasOwnProperty(j)) {
+          var page = Object.keys(json)[i]
+          i++;
+          if(page==url.substring(0,page.length)){
+            fixes = fixes.concat(json[j]);
+        }
+    }   
+}
+
+return fixes;
+}
+
 
 /**
  * Error reporting function
@@ -248,28 +349,90 @@ function iterateFixes(json, scope) {
  * DEBUG state.
  */
 function error(scope, fix, fixCount) {
-    var msg = 'FAILED: Fix number ' + parseInt(fixCount + 1) + ' for page "' + scope + '" (Selector: "' + fix.selector + '")';
-    console.log(msg);
-    if (ALERTS) {
-        alert(msg);
+    if (!secondAttempt){
+        var msg = 'FAILED: Fix for page "' + scope + '" Task: "' + fix.description + '"';
+        writeToConsole(msg);
+        if (ALERTS) {
+            alert(msg);
+        }
     }
+}
+
+function writeToConsole(m) {
+    if (window.console) {
+        console.log(m);
+    }
+}
+
+function run() {
+    a11yFixer(fixesForPages);
 }
 
 /**
- * This allows us to execute after the dom and everything else has loaded
+ * Make sure a11yfixer.js is the last function to run when the page is loaded.
+ * From: https://thechamplord.wordpress.com/2014/07/04/using-javascript-window-onload-event-properly/
  */
-function addLoadEvent(func) {
-    var oldonload = window.onload;
-    if (typeof window.onload != 'function') {
-        window.onload = func;
+
+function myFunctionLoadEvent(func) {
+    if (document.readyState === 'complete') {
+        func();
     } else {
-        window.onload = function() {
-            if (oldonload) {
-                oldonload();
+        // assign any pre-defined functions on 'window.onload' to a variable
+        var oldOnLoad = window.onload;
+        // if there is not any function hooked to it
+        if (typeof window.onload != 'function') {
+            // you can hook your function with it
+            window.onload = func
+        } else { // someone already hooked a function
+            window.onload = function () {
+                // call the function hooked already
+                oldOnLoad();
+                // call your awesome function
+                func();
             }
-            func();
-        };
+        }
     }
 }
 
-addLoadEvent(a11yFixer(fixesForPages));
+// load jQuery and wait for it to be loaded, then execute the function
+if (typeof jQueryA11Y == 'undefined') {  
+    // jQuery is already loaded
+    (function () {
+
+        function loadScript(url, callback) {
+
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+
+        if (script.readyState) { //IE
+            script.onreadystatechange = function () {
+                if (script.readyState == "loaded" || script.readyState == "complete") {
+                    script.onreadystatechange = null;
+                    callback();
+                }
+            };
+        } else { //Others
+            script.onload = function () {
+                callback();
+            };
+        }
+
+        script.src = url;
+        document.getElementsByTagName("head")[0].appendChild(script);
+    }
+
+    loadScript("//code.jquery.com/jquery-1.11.3.min.js", function () {
+
+         //jQuery loaded
+         jQueryA11Y = jQuery.noConflict( true );
+         //myFunctionLoadEvent(a11yFixer(fixesForPages));
+         myFunctionLoadEvent(run);
+    });
+    })();
+
+} else {
+    //myFunctionLoadEvent(a11yFixer(fixesForPages));
+    myFunctionLoadEvent(run);
+}
+
+
