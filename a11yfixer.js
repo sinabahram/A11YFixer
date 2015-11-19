@@ -97,7 +97,7 @@ var fixesForPages = {
                 'description' : 'Modifies the heading',
                 'status': false,
                 'action': function (selectorObj) {
-                    selectorObj.html(selector.html() + '... accessibility fairy dust in your heading');
+                    selectorObj.html(selectorObj.html() + '... accessibility fairy dust in your heading');
                     return true;
                 }
             },
@@ -170,7 +170,7 @@ var fixesForPages = {
                 'description' : 'Modifies the heading',
                 'status': false,
                 'action': function (selectorObj) {
-                    selectorObj.html(selector.html() + '... accessibility fairy dust in your heading');
+                    selectorObj.html(selectorObj.html() + '... accessibility fairy dust in your heading');
                     return true;
                 }
             },
